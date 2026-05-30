@@ -78,7 +78,7 @@ class ProxmoxToolbox:
     # MODUL: GUI AUFBAU
     # ==========================================
     def create_login_screen(self):
-        tk.Label(self.login_frame, text="Proxmox Login:", font=("Arial", 16, "bold")).pack(pady=20)
+        tk.Label(self.login_frame, text="Proxmox Login", font=("Arial", 16, "bold")).pack(pady=20)
 
         # Host
         tk.Label(self.login_frame, text="Host (IP oder FQDN):").pack()
