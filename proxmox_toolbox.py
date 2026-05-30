@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import requests
 import sys
 import os
+import time
 from proxmoxer import ProxmoxAPI
 import urllib3
 
@@ -41,7 +42,12 @@ class ProxmoxToolbox:
 
         try:
             # Lade den Code von GitHub
-            response = requests.get(GITHUB_RAW_URL, timeout=10)
+            # Cache-Busting: Timestamp an die URL hängen, um den GitHub-Cache zu umgehen
+            timestamp = int(time.time())
+            nocache_url = f"{GITHUB_RAW_URL}?t={timestamp}"
+            
+            # Lade den Code von GitHub mit der neuen URL
+            response = requests.get(nocache_url, timeout=10)
             response.raise_for_status() # Löst einen Fehler aus, wenn die Seite nicht 200 OK meldet (z.B. 404)
             
             new_code = response.text
