@@ -16,7 +16,7 @@ CURRENT_VERSION = "0.1"
 class ProxmoxToolbox:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Proxmox Toolbox v{CURRENT_VERSION}")
+        self.root.title(f"Proxmox Toolbox! v{CURRENT_VERSION}")
         self.root.geometry("600x450")
         self.proxmox = None
         
