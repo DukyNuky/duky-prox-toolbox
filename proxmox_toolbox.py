@@ -46,32 +46,30 @@ class ProxmoxToolbox:
             return
 
         try:
-            # Lade den Code von GitHub
-            # Cache-Busting: Timestamp an die URL hängen, um den GitHub-Cache zu umgehen
-            timestamp = int(time.time())
-            nocache_url = f"{GITHUB_RAW_URL}?t={timestamp}"
+            # Header für die API: Gib uns direkt den rohen Code und ignoriere jeglichen Cache
+            headers = {
+                "Accept": "application/vnd.github.v3.raw",
+                "Cache-Control": "no-cache"
+            }
             
-            # Lade den Code von GitHub mit der neuen URL
-            response = requests.get(nocache_url, timeout=10)
-            response.raise_for_status() # Löst einen Fehler aus, wenn die Seite nicht 200 OK meldet (z.B. 404)
+            # Lade den Code über die GitHub API
+            response = requests.get(GITHUB_API_URL, headers=headers, timeout=10)
+            response.raise_for_status() 
             
             new_code = response.text
             
-            # Ein kleiner Sicherheitscheck, ob das, was wir geladen haben, auch wirklich unser Skript ist
+            # Sicherheitscheck, ob es wirklich unser Skript ist
             if "class ProxmoxToolbox:" not in new_code:
                 messagebox.showerror("Update-Fehler", "Die heruntergeladene Datei scheint nicht das korrekte Skript zu sein.")
                 return
 
-            # Ermittle den absoluten Pfad der Datei, die gerade ausgeführt wird
             current_file = os.path.abspath(__file__)
             
-            # Überschreibe die eigene Datei mit dem neuen Code
             with open(current_file, 'w', encoding='utf-8') as f:
                 f.write(new_code)
                 
             messagebox.showinfo("Update erfolgreich", "Das Tool wurde erfolgreich aktualisiert und startet nun neu!")
             
-            # Prozess sauber durch den neuen ersetzen (Cross-Plattform kompatibel)
             os.execv(sys.executable, [sys.executable, current_file])
 
         except requests.exceptions.RequestException as e:
