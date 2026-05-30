@@ -135,12 +135,24 @@ class ProxmoxToolbox:
             self.tree.delete(item)
             
         try:
-            # Alle Nodes im Cluster abrufen (unterstützt direkt Multi-Node Setups)
+            # Liste aller Nodes im Cluster abrufen
             nodes = self.proxmox.nodes.get()
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Konnte Cluster-Nodes nicht abrufen:\n{str(e)}")
+            return
+
+        for node in nodes:
+            node_name = node['node']
             
-            for node in nodes:
-                node_name = node['node']
-                # QEMU (VMs) für diese Node abrufen
+            # 1. Check: Ist die Node laut Proxmox-Status überhaupt online?
+            if node.get('status') != 'online':
+                print(f"Node '{node_name}' ist nicht online. Überspringe...")
+                # Optional: Einen visuellen Platzhalter in die Tabelle packen
+                self.tree.insert("", "end", values=("-", f"[{node_name} OFFLINE]", "-", node_name))
+                continue
+                
+            # 2. Versuch, die VMs abzurufen
+            try:
                 vms = self.proxmox.nodes(node_name).qemu.get()
                 
                 for vm in vms:
@@ -150,8 +162,11 @@ class ProxmoxToolbox:
                     
                     self.tree.insert("", "end", values=(vmid, name, status, node_name))
                     
-        except Exception as e:
-            messagebox.showerror("Fehler", f"Konnte VMs nicht laden:\n{str(e)}")
+            except Exception as e:
+                # Falls trotz "online" Status ein Timeout/595 Fehler auftritt: 
+                # Fehler in die Konsole drucken, aber Skript läuft für die nächsten Nodes weiter.
+                print(f"Warnung: Konnte VMs von Node '{node_name}' nicht laden: {e}")
+                self.tree.insert("", "end", values=("-", f"API-Fehler bei {node_name}", "Fehler", node_name))
 
 if __name__ == "__main__":
     root = tk.Tk()
