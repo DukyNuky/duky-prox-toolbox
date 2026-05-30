@@ -32,18 +32,41 @@ class ProxmoxToolbox:
     # MODUL: UPDATE SYSTEM
     # ==========================================
     def check_for_update(self):
-        """Prüft auf Updates und aktualisiert das Skript selbstständig."""
+        """Lädt die aktuelle Version von GitHub, überschreibt sich selbst und startet neu."""
+        
+        # WICHTIG: GITHUB_RAW_URL oben im Skript muss auf die RAW-Ansicht deiner Datei zeigen!
+        if "DEIN_NAME" in GITHUB_RAW_URL:
+            messagebox.showwarning("Hinweis", "Bitte trage erst deine echte GitHub RAW-URL im Skript ein (Variable GITHUB_RAW_URL).")
+            return
+
         try:
-            # Beispielhafte Logik (für den produktiven Einsatz musst du die Versionierung in der Raw-Datei parsen)
-            # response = requests.get(GITHUB_RAW_URL, timeout=5)
-            # if "VERSION = '0.2'" in response.text: # Stark vereinfacht
-            #     with open(__file__, 'w', encoding='utf-8') as f:
-            #         f.write(response.text)
-            #     messagebox.showinfo("Update", "Update erfolgreich. Tool startet neu.")
-            #     os.execv(sys.executable, ['python'] + sys.argv)
-            pass
+            # Lade den Code von GitHub
+            response = requests.get(GITHUB_RAW_URL, timeout=10)
+            response.raise_for_status() # Löst einen Fehler aus, wenn die Seite nicht 200 OK meldet (z.B. 404)
+            
+            new_code = response.text
+            
+            # Ein kleiner Sicherheitscheck, ob das, was wir geladen haben, auch wirklich unser Skript ist
+            if "class ProxmoxToolbox:" not in new_code:
+                messagebox.showerror("Update-Fehler", "Die heruntergeladene Datei scheint nicht das korrekte Skript zu sein.")
+                return
+
+            # Ermittle den absoluten Pfad der Datei, die gerade ausgeführt wird
+            current_file = os.path.abspath(__file__)
+            
+            # Überschreibe die eigene Datei mit dem neuen Code
+            with open(current_file, 'w', encoding='utf-8') as f:
+                f.write(new_code)
+                
+            messagebox.showinfo("Update erfolgreich", "Das Tool wurde erfolgreich aktualisiert und startet nun neu!")
+            
+            # Prozess sauber durch den neuen ersetzen (Cross-Plattform kompatibel)
+            os.execv(sys.executable, [sys.executable, current_file])
+
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror("Netzwerkfehler", f"Konnte GitHub nicht erreichen:\n{str(e)}")
         except Exception as e:
-            print(f"Update-Check fehlgeschlagen: {e}")
+            messagebox.showerror("Update fehlgeschlagen", f"Ein unerwarteter Fehler ist aufgetreten:\n{str(e)}")
 
     # ==========================================
     # MODUL: GUI AUFBAU
