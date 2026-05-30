@@ -11,7 +11,12 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- KONFIGURATION ---
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/DukyNuky/duky-prox-toolbox/refs/heads/main/proxmox_toolbox.py"
+#GITHUB_RAW_URL = "https://raw.githubusercontent.com/DukyNuky/duky-prox-toolbox/refs/heads/main/proxmox_toolbox.py"
+# Vorher (löschen oder auskommentieren):
+# GITHUB_RAW_URL = "https://raw.githubusercontent.com/..."
+
+# NEU:
+GITHUB_API_URL = "https://api.github.com/repos/DukyNuky/duky-prox-toolbox/contents/proxmox_toolbox.py"
 CURRENT_VERSION = "0.1"
 
 class ProxmoxToolbox:
