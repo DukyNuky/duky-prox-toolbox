@@ -10,7 +10,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- KONFIGURATION ---
-GITHUB_RAW_URL = "https://raw.githubusercontent.com/DEIN_NAME/DEIN_REPO/main/proxmox_toolbox.py"
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/DukyNuky/duky-prox-toolbox/refs/heads/main/proxmox_toolbox.py"
 CURRENT_VERSION = "0.1"
 
 class ProxmoxToolbox:
