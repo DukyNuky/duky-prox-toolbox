@@ -41,7 +41,7 @@ class ProxmoxToolbox:
         """Lädt die aktuelle Version von GitHub, überschreibt sich selbst und startet neu."""
         
         # WICHTIG: GITHUB_RAW_URL oben im Skript muss auf die RAW-Ansicht deiner Datei zeigen!
-        if "DEIN_NAME" in GITHUB_RAW_URL:
+        if "DEIN_NAME" in GITHUB_API_URL:
             messagebox.showwarning("Hinweis", "Bitte trage erst deine echte GitHub RAW-URL im Skript ein (Variable GITHUB_RAW_URL).")
             return
 
