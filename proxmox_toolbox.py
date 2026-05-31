@@ -1,206 +1,91 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import requests
-import sys
 import os
-import time
+import sys
 from proxmoxer import ProxmoxAPI
 import urllib3
 
-# Warnungen für selbstsignierte Zertifikate deaktivieren (Standard bei Proxmox)
+# Warnungen für selbstsignierte Zertifikate deaktivieren
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- KONFIGURATION ---
-#GITHUB_RAW_URL = "https://raw.githubusercontent.com/DukyNuky/duky-prox-toolbox/refs/heads/main/proxmox_toolbox.py"
-# Vorher (löschen oder auskommentieren):
-# GITHUB_RAW_URL = "https://raw.githubusercontent.com/..."
-
-# NEU:
-GITHUB_API_URL = "https://api.github.com/repos/DukyNuky/duky-prox-toolbox/contents/proxmox_toolbox.py"
-CURRENT_VERSION = "0.1"
+# Bitte hier wieder deine echte GitHub API URL eintragen!
+GITHUB_API_URL = "https://api.github.com/repos/DEIN_NAME/DEIN_REPO/contents/proxmox_toolbox.py"
 
 class ProxmoxToolbox:
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Proxmox Toolbox v{CURRENT_VERSION}")
-        self.root.geometry("600x450")
+        self.root.title("Proxmox Toolbox")
+        self.root.geometry("1000x600")
+        
+        # --- GRID LAYOUT ---
+        # Spalte 0 (Sidebar) ist fixiert, Spalte 1 (Main) wächst dynamisch
+        self.root.grid_columnconfigure(1, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+
+        # 1. Sidebar Frame erstellen (Dunkles Design)
+        self.sidebar = tk.Frame(self.root, bg="#2c3e50", width=250)
+        self.sidebar.grid(row=0, column=0, sticky="ns")
+        self.sidebar.grid_propagate(False) # Verhindert, dass die Sidebar schrumpft
+
+        # 2. Main Frame erstellen (Helles Design)
+        self.main_container = tk.Frame(self.root, bg="#ecf0f1")
+        self.main_container.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+
         self.proxmox = None
-        
-        # UI Container
-        self.login_frame = tk.Frame(self.root)
-        self.main_frame = tk.Frame(self.root)
-        
-        # Start
-        self.create_login_screen()
-        self.login_frame.pack(fill="both", expand=True)
+
+        # Start: Login in der Sidebar anzeigen
+        self.show_sidebar_login()
+        self.show_welcome_main()
 
     # ==========================================
-    # MODUL: UPDATE SYSTEM
+    # MODUL: SIDEBAR ANSICHTEN
     # ==========================================
-    def check_for_update(self):
-        """Lädt die aktuelle Version von GitHub, überschreibt sich selbst und startet neu."""
-        
-        # WICHTIG: GITHUB_RAW_URL oben im Skript muss auf die RAW-Ansicht deiner Datei zeigen!
-        if "DEIN_NAME" in GITHUB_API_URL:
-            messagebox.showwarning("Hinweis", "Bitte trage erst deine echte GitHub RAW-URL im Skript ein (Variable GITHUB_RAW_URL).")
-            return
+    def show_sidebar_login(self):
+        # Sidebar leeren
+        for widget in self.sidebar.winfo_children():
+            widget.destroy()
 
-        try:
-            # Header für die API: Gib uns direkt den rohen Code und ignoriere jeglichen Cache
-            headers = {
-                "Accept": "application/vnd.github.v3.raw",
-                "Cache-Control": "no-cache"
-            }
-            
-            # Lade den Code über die GitHub API
-            response = requests.get(GITHUB_API_URL, headers=headers, timeout=10)
-            response.raise_for_status() 
-            
-            new_code = response.text
-            
-            # Sicherheitscheck, ob es wirklich unser Skript ist
-            if "class ProxmoxToolbox:" not in new_code:
-                messagebox.showerror("Update-Fehler", "Die heruntergeladene Datei scheint nicht das korrekte Skript zu sein.")
-                return
-
-            current_file = os.path.abspath(__file__)
-            
-            with open(current_file, 'w', encoding='utf-8') as f:
-                f.write(new_code)
-                
-            messagebox.showinfo("Update erfolgreich", "Das Tool wurde erfolgreich aktualisiert und startet nun neu!")
-            
-            os.execv(sys.executable, [sys.executable, current_file])
-
-        except requests.exceptions.RequestException as e:
-            messagebox.showerror("Netzwerkfehler", f"Konnte GitHub nicht erreichen:\n{str(e)}")
-        except Exception as e:
-            messagebox.showerror("Update fehlgeschlagen", f"Ein unerwarteter Fehler ist aufgetreten:\n{str(e)}")
-
-    # ==========================================
-    # MODUL: GUI AUFBAU
-    # ==========================================
-    def create_login_screen(self):
-        tk.Label(self.login_frame, text="Proxmox Login", font=("Arial", 16, "bold")).pack(pady=20)
+        # Titel
+        tk.Label(self.sidebar, text="Proxmox Login", bg="#2c3e50", fg="white", font=("Arial", 16, "bold")).pack(pady=(20, 20))
 
         # Host
-        tk.Label(self.login_frame, text="Host (IP oder FQDN):").pack()
-        self.entry_host = tk.Entry(self.login_frame, width=30)
-        self.entry_host.pack(pady=5)
+        tk.Label(self.sidebar, text="Host (IP oder FQDN):", bg="#2c3e50", fg="white").pack(anchor="w", padx=15)
+        self.entry_host = tk.Entry(self.sidebar)
+        self.entry_host.pack(fill="x", padx=15, pady=(0, 15))
         self.entry_host.insert(0, "192.168.x.x")
 
         # User
-        tk.Label(self.login_frame, text="Benutzer (z.B. root@pam):").pack()
-        self.entry_user = tk.Entry(self.login_frame, width=30)
-        self.entry_user.pack(pady=5)
+        tk.Label(self.sidebar, text="Benutzer:", bg="#2c3e50", fg="white").pack(anchor="w", padx=15)
+        self.entry_user = tk.Entry(self.sidebar)
+        self.entry_user.pack(fill="x", padx=15, pady=(0, 15))
         self.entry_user.insert(0, "root@pam")
 
         # Passwort
-        tk.Label(self.login_frame, text="Passwort:").pack()
-        self.entry_pw = tk.Entry(self.login_frame, width=30, show="*")
-        self.entry_pw.pack(pady=5)
+        tk.Label(self.sidebar, text="Passwort:", bg="#2c3e50", fg="white").pack(anchor="w", padx=15)
+        self.entry_pw = tk.Entry(self.sidebar, show="*")
+        self.entry_pw.pack(fill="x", padx=15, pady=(0, 20))
 
         # Login Button
-        tk.Button(self.login_frame, text="Verbinden", command=self.do_login, bg="#4CAF50", fg="white").pack(pady=20)
+        tk.Button(self.sidebar, text="Verbinden", command=self.do_login, bg="#27ae60", fg="white", font=("Arial", 10, "bold")).pack(fill="x", padx=15)
+
+        # Update Button ganz unten
+        tk.Button(self.sidebar, text="Tool Updaten", command=self.check_for_update).pack(side="bottom", fill="x", padx=15, pady=20)
+
+    def show_sidebar_menu(self):
+        # Sidebar leeren
+        for widget in self.sidebar.winfo_children():
+            widget.destroy()
+
+        # Titel
+        tk.Label(self.sidebar, text="Toolbox Menu", bg="#2c3e50", fg="#2ecc71", font=("Arial", 16, "bold")).pack(pady=(20, 20))
+
+        # Funktionen
+        tk.Button(self.sidebar, text="VMs auflisten", command=self.show_vm_view, font=("Arial", 11)).pack(fill="x", padx=15, pady=5)
         
-        # Update Button
-        tk.Button(self.login_frame, text="Nach Updates suchen", command=self.check_for_update).pack(pady=5)
+        # Hier kannst du später weitere Buttons einfügen, z.B.:
+        # tk.Button(self.sidebar, text="Backups prüfen", command=self.show_backup_view).pack(fill="x", padx=15, pady=5)
 
-    def create_main_screen(self):
-        # Header
-        header = tk.Frame(self.main_frame)
-        header.pack(fill="x", padx=10, pady=10)
-        tk.Label(header, text="Aktuelle VMs", font=("Arial", 14, "bold")).pack(side="left")
-        tk.Button(header, text="Aktualisieren", command=self.load_vms).pack(side="right")
-        tk.Button(header, text="Logout", command=self.do_logout).pack(side="right", padx=10)
-
-        # Tabelle für VMs
-        columns = ("ID", "Name", "Status", "Node")
-        self.tree = ttk.Treeview(self.main_frame, columns=columns, show="headings")
-        
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=120, anchor="center")
-            
-        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
-
-    # ==========================================
-    # MODUL: PROXMOX LOGIK
-    # ==========================================
-    def do_login(self):
-        host = self.entry_host.get()
-        user = self.entry_user.get()
-        password = self.entry_pw.get()
-
-        try:
-            # Verbindung aufbauen
-            self.proxmox = ProxmoxAPI(
-                host, user=user, password=password, verify_ssl=False
-            )
-            # Test-Call um zu prüfen ob Login erfolgreich war
-            self.proxmox.version.get()
-            
-            # Ansicht wechseln
-            self.login_frame.pack_forget()
-            self.create_main_screen()
-            self.main_frame.pack(fill="both", expand=True)
-            
-            # Daten initial laden
-            self.load_vms()
-            
-        except Exception as e:
-            messagebox.showerror("Login Fehler", f"Verbindung fehlgeschlagen:\n{str(e)}")
-
-    def do_logout(self):
-        self.proxmox = None
-        # Tabelleninhalt löschen
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-            
-        # Ansicht zurückwechseln
-        self.main_frame.pack_forget()
-        self.login_frame.pack(fill="both", expand=True)
-
-    def load_vms(self):
-        # Alte Einträge löschen
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-            
-        try:
-            # Liste aller Nodes im Cluster abrufen
-            nodes = self.proxmox.nodes.get()
-        except Exception as e:
-            messagebox.showerror("Fehler", f"Konnte Cluster-Nodes nicht abrufen:\n{str(e)}")
-            return
-
-        for node in nodes:
-            node_name = node['node']
-            
-            # 1. Check: Ist die Node laut Proxmox-Status überhaupt online?
-            if node.get('status') != 'online':
-                print(f"Node '{node_name}' ist nicht online. Überspringe...")
-                # Optional: Einen visuellen Platzhalter in die Tabelle packen
-                self.tree.insert("", "end", values=("-", f"[{node_name} OFFLINE]", "-", node_name))
-                continue
-                
-            # 2. Versuch, die VMs abzurufen
-            try:
-                vms = self.proxmox.nodes(node_name).qemu.get()
-                
-                for vm in vms:
-                    vmid = vm.get("vmid", "N/A")
-                    name = vm.get("name", "Unbekannt")
-                    status = vm.get("status", "N/A")
-                    
-                    self.tree.insert("", "end", values=(vmid, name, status, node_name))
-                    
-            except Exception as e:
-                # Falls trotz "online" Status ein Timeout/595 Fehler auftritt: 
-                # Fehler in die Konsole drucken, aber Skript läuft für die nächsten Nodes weiter.
-                print(f"Warnung: Konnte VMs von Node '{node_name}' nicht laden: {e}")
-                self.tree.insert("", "end", values=("-", f"API-Fehler bei {node_name}", "Fehler", node_name))
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ProxmoxToolbox(root)
-    root.mainloop()
+        # Logout & Update ganz unten
+        tk.Button(self.sidebar, text="Logout", command=self.do_logout, bg="#e74c3c", fg
