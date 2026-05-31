@@ -10,7 +10,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- KONFIGURATION ---
-GITHUB_API_URL = "https://api.github.com/repos/DEIN_NAME/DEIN_REPO/contents/proxmox_toolbox.py"
+GITHUB_API_URL = "https://raw.githubusercontent.com/DukyNuky/duky-prox-toolbox/refs/heads/main/proxmox_toolbox.py"
 
 # --- FARBEN (PROXMOX DARK MODE) ---
 BG_MAIN = "#1a1c23"       # Dunkler Hintergrund (Hauptbereich)
